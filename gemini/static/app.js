@@ -5,6 +5,14 @@ const sendButton = document.getElementById("send-button");
 const newChatButton = document.getElementById("new-chat");
 let conversation = [];
 
+function cleanAssistantText(text) {
+	return text
+		.replace(/\*\*([^*]+)\*\*/g, "$1")
+		.replace(/__([^_]+)__/g, "$1")
+		.replace(/^#{1,6}\s+/gm, "")
+		.trim();
+}
+
 function addMessage(text, role, temporary = false) {
 	const wrapper = document.createElement("div");
 	wrapper.className = `message ${role}-message`;
@@ -16,9 +24,34 @@ function addMessage(text, role, temporary = false) {
 
 	const bubble = document.createElement("div");
 	bubble.className = "bubble";
-	bubble.textContent = text;
+	bubble.textContent = role === "assistant" && !temporary ? cleanAssistantText(text) : text;
 
 	wrapper.append(avatar, bubble);
+	if (role === "assistant" && !temporary) {
+		const actions = document.createElement("div");
+		actions.className = "message-actions";
+		const copyButton = document.createElement("button");
+		copyButton.className = "copy-button";
+		copyButton.type = "button";
+		copyButton.title = "Copy response";
+		copyButton.setAttribute("aria-label", "Copy response");
+		copyButton.textContent = "⧉";
+		copyButton.addEventListener("click", async () => {
+			try {
+				await navigator.clipboard.writeText(bubble.textContent);
+				copyButton.textContent = "✓";
+				copyButton.classList.add("copied");
+				setTimeout(() => {
+					copyButton.textContent = "⧉";
+					copyButton.classList.remove("copied");
+				}, 1400);
+			} catch {
+				copyButton.textContent = "!";
+			}
+		});
+		actions.appendChild(copyButton);
+		wrapper.appendChild(actions);
+	}
 	messages.appendChild(wrapper);
 	messages.scrollTop = messages.scrollHeight;
 }
