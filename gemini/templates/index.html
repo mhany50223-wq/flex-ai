@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FLEX | مساعدك الذكي</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <main class="app-shell">
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-mark">✦</div>
+                <div>
+                    <h1>FLEX</h1>
+                    <span>مساعدك الذكي الخاص</span>
+                </div>
+            </div>
+            <button id="new-chat" class="new-chat">＋ محادثة جديدة</button>
+            <div class="sidebar-info">
+                    <strong>FLEX متاح دائمًا</strong>
+                <p>اسأل عن البرمجة، الأفكار، التعلم وأي موضوع آخر.</p>
+            </div>
+            <div class="sidebar-footer">© 2026 FLEX</div>
+        </aside>
+
+        <section class="chat-panel">
+            <header class="chat-header">
+                <div class="status-dot"></div>
+                <div>
+                    <h2>FLEX</h2>
+                    <p>متصل الآن</p>
+                </div>
+            </header>
+
+            <div id="messages" class="messages">
+                <div class="message assistant-message">
+                    <div class="avatar">✦</div>
+                    <div class="bubble">أهلًا بك! أنا FLEX، مساعدك الذكي. كيف يمكنني مساعدتك اليوم؟</div>
+                </div>
+            </div>
+
+            <div class="suggestions">
+                <button data-suggestion="اشرح لي فكرة بطريقة بسيطة">اشرح لي فكرة</button>
+                <button data-suggestion="ساعدني في كتابة كود Python">ساعدني في البرمجة</button>
+                <button data-suggestion="اقترح لي أفكارًا لمشروع جديد">أفكار لمشروع</button>
+            </div>
+
+            <form id="chat-form" class="composer">
+                <textarea id="message-input" rows="1" placeholder="اكتب رسالتك هنا..." aria-label="رسالتك"></textarea>
+                <button id="send-button" type="submit" aria-label="إرسال الرسالة">➤</button>
+            </form>
+            <p class="disclaimer">قد يخطئ المساعد أحيانًا، لذلك راجع المعلومات المهمة.</p>
+        </section>
+    </main>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

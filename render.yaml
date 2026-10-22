@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: flex-ai
+    runtime: python
+    rootDir: gemini
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    plan: free
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.0-flash
