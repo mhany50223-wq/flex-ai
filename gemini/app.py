@@ -1,4 +1,5 @@
 import os
+import time
 
 from flask import Flask, jsonify, render_template, request
 
@@ -17,11 +18,15 @@ SYSTEM_PROMPT = """أنت مساعد ذكي داخل موقع خاص. أجب ب�
 
 
 def get_ai_response(message, conversation):
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key or genai is None:
+    if genai is None:
+        return "موقع FLEX يعمل بنجاح، لكن مكتبة Gemini غير مثبتة على الخادم."
+
+    keys = [key.strip() for key in os.getenv("GEMINI_API_KEYS", "").split(",") if key.strip()]
+    if not keys and os.getenv("GEMINI_API_KEY"):
+        keys = [os.getenv("GEMINI_API_KEY")]
+    if not keys:
         return "موقع FLEX يعمل بنجاح، لكن لم يتم إعداد GEMINI_API_KEY بعد. أضف مفتاح Gemini لتفعيل الردود الذكية."
 
-    client = genai.Client(api_key=api_key)
     contents = []
     for item in conversation[-12:]:
         if item.get("role") in {"user", "assistant"} and isinstance(item.get("content"), str):
@@ -31,15 +36,37 @@ def get_ai_response(message, conversation):
             })
     contents.append({"role": "user", "parts": [{"text": message}]})
 
-    response = client.models.generate_content(
-        model=os.getenv("GEMINI_MODEL", "gemini-3.8-flash"),
-        contents=contents,
-        config=types.GenerateContentConfig(
-            system_instruction=SYSTEM_PROMPT,
-            temperature=0.7,
-        ),
-    )
-    return response.text
+    primary_model = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+    models = [primary_model]
+    for model in os.getenv("GEMINI_FALLBACK_MODELS", "gemini-3.8-flash-lite").split(","):
+        model = model.strip()
+        if model and model not in models:
+            models.append(model)
+
+    last_error = None
+    for model in models:
+        for api_key in keys:
+            for attempt in range(2):
+                try:
+                    client = genai.Client(api_key=api_key)
+                    response = client.models.generate_content(
+                        model=model,
+                        contents=contents,
+                        config=types.GenerateContentConfig(
+                            system_instruction=SYSTEM_PROMPT,
+                            temperature=0.7,
+                        ),
+                    )
+                    return response.text
+                except Exception as error:
+                    last_error = error
+                    error_text = str(error).upper()
+                    temporary = any(code in error_text for code in ("429", "503", "UNAVAILABLE", "RESOURCE_EXHAUSTED"))
+                    if not temporary:
+                        break
+                    time.sleep(1.5 * (attempt + 1))
+
+    raise last_error
 
 
 @app.get("/")
@@ -65,7 +92,10 @@ def chat():
         return jsonify({"answer": answer})
     except Exception as error:
         app.logger.exception("AI request failed: %s", error)
-        details = str(error).replace(os.getenv("GEMINI_API_KEY", ""), "[hidden]")
+        details = str(error)
+        for api_key in os.getenv("GEMINI_API_KEYS", "").split(",") + [os.getenv("GEMINI_API_KEY", "")]:
+            if api_key:
+                details = details.replace(api_key, "[hidden]")
         return jsonify({
             "error": f"حدث خطأ من Gemini: {type(error).__name__}: {details[:500]}"
         }), 502
