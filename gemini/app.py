@@ -1,5 +1,10 @@
 import os
 
+try:
+    from groq import Groq
+except ImportError:
+    Groq = None
+
 from flask import Flask, jsonify, render_template, request
 
 try:
@@ -22,6 +27,43 @@ they genuinely improve readability."""
 
 
 import time
+
+def get_groq_response(message, conversation):
+    api_key = os.getenv("GROQ_API_KEY")
+
+    if not api_key or Groq is None:
+        return None
+
+    client = Groq(api_key=api_key)
+
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+
+    for item in conversation[-8:]:
+        role = item.get("role")
+        content = item.get("content")
+
+        if role in ("user", "assistant") and isinstance(content, str):
+            messages.append({
+                "role": role,
+                "content": content[:2000],
+            })
+
+    messages.append({"role": "user", "content": message})
+
+    response = client.chat.completions.create(
+        model=os.getenv(
+            "GROQ_MODEL",
+            "openai/gpt-oss-20b"
+        ),
+        messages=messages,
+        max_tokens=1000,
+    )
+
+    if response.choices:
+        return response.choices[0].message.content
+
+    return None
+
 
 def get_ai_response(message, conversation):
     if genai is None:
