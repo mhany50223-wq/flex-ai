@@ -3,13 +3,13 @@
 }
 
 :root {
-    --background: #f5f7fb;
-    --panel: #ffffff;
-    --primary: #6657e8;
-    --primary-dark: #5143cf;
-    --text: #20233a;
-    --muted: #8b8fa7;
-    --border: #ececf4;
+    --background: #080a12;
+    --panel: #111522;
+    --primary: #7667ff;
+    --primary-dark: #5d4ee0;
+    --text: #f3f3ff;
+    --muted: #9da3bd;
+    --border: #292e43;
 }
 
 body {
@@ -63,7 +63,7 @@ body::before {
     height: 42px;
     border-radius: 13px;
     color: var(--primary);
-    background: white;
+    background: #e9e8ff;
     font-size: 22px;
     font-weight: 800;
 }
@@ -193,7 +193,7 @@ body::before {
     max-width: min(70%, 620px);
     padding: 14px 18px;
     border-radius: 6px 18px 18px 18px;
-    background: #f1f1f8;
+    background: #1d2233;
     line-height: 1.8;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
@@ -220,10 +220,10 @@ body::before {
 
 .suggestions button {
     padding: 8px 13px;
-    border: 1px solid #e2e1f3;
+    border: 1px solid #353b56;
     border-radius: 20px;
     color: var(--primary);
-    background: white;
+    background: #151a29;
     font: inherit;
     font-size: 11px;
     cursor: pointer;
@@ -231,7 +231,7 @@ body::before {
 
 .suggestions button:hover {
     border-color: var(--primary);
-    background: #f7f6ff;
+    background: #242a42;
     transform: translateY(-2px);
     box-shadow: 0 5px 12px rgba(102, 87, 232, .12);
 }
@@ -243,7 +243,7 @@ body::before {
     width: min(850px, 90%);
     margin: 0 auto;
     padding: 9px 10px 9px 16px;
-    border: 1px solid #e3e3ed;
+    border: 1px solid #353b56;
     border-radius: 17px;
     box-shadow: 0 8px 25px rgba(50, 44, 120, .08);
 }
