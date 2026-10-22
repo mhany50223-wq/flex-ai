@@ -1,5 +1,5 @@
 import os
-
+import time
 try:
     from groq import Groq
 except ImportError:
@@ -25,8 +25,6 @@ Use clean readable formatting. Do not wrap normal headings or sentences in
 decorative asterisks. Use short headings, bullets, and code blocks only when
 they genuinely improve readability."""
 
-
-import time
 
 def get_groq_response(message, conversation):
     api_key = os.getenv("GROQ_API_KEY")
@@ -84,7 +82,6 @@ def get_ai_response(message, conversation):
             })
     contents.append({"role": "user", "parts": [{"text": message}]})
 
-    # الالتزام التام بموديل 3.8-flash حصراً زي ما جوجل طالبة
     model = os.getenv("GEMINI_MODEL", "gemini-3.8-flash").strip()
     if not model:
         model = "gemini-3.8-flash"
@@ -132,37 +129,35 @@ def get_ai_response(message, conversation):
 
                 break
 
+    # معالجة الخطأ والفولباك داخل الدالة بشكل صحيح
+    if last_error:
+        error_text = str(last_error).upper()
 
-   
-if last_error:
-    error_text = str(last_error).upper()
+        fallback_errors = (
+            "429",
+            "RESOURCE_EXHAUSTED",
+            "QUOTA",
+            "503",
+            "UNAVAILABLE",
+            "504",
+            "DEADLINE_EXCEEDED",
+        )
 
-    fallback_errors = (
-        "429",
-        "RESOURCE_EXHAUSTED",
-        "QUOTA",
-        "503",
-        "UNAVAILABLE",
-        "504",
-        "DEADLINE_EXCEEDED",
-    )
+        if any(code in error_text for code in fallback_errors):
+            try:
+                fallback_answer = get_groq_response(
+                    message, conversation
+                )
 
-    if any(code in error_text for code in fallback_errors):
-        try:
-            fallback_answer = get_groq_response(
-                message, conversation
-            )
+                if fallback_answer:
+                    return fallback_answer
 
-            if fallback_answer:
-                return fallback_answer
+            except Exception:
+                app.logger.exception("Groq fallback failed")
 
-        except Exception:
-            app.logger.exception("Groq fallback failed")
+        raise last_error
 
-    raise last_error
-
-return "عذراً، لم نتمكن من الحصول على رد حالياً."
-
+    return "عذراً، لم نتمكن من الحصول على رد حالياً."
 
 
 @app.get("/")
@@ -190,15 +185,15 @@ def chat():
         app.logger.exception("AI request failed: %s", error)
         error_msg = str(error)
         
-        # لو المشكلة كوتا أو ضغط، نوضحها للمستخدم بشياكة بدل ما السيرفر يوقع
         if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
-            user_error = "عذراً يا فلكس، مفتاح الapi استنفذ الحد الأقصى اليومي (Quota). جرب مفتاح جديد أو انتظر قليلاً."
+            user_error = "عذراً يا فلكس، مفتاح الـ API استنفذ الحد الأقصى اليومي (Quota). جرب مفتاح جديد أو انتظر قليلاً."
         elif "503" in error_msg or "UNAVAILABLE" in error_msg:
             user_error = "سيرفرات جوجل عليها ضغط حالياً (503)، جرب ابعت الرسالة تاني كمان ثانية."
         else:
             user_error = f"حدث خطأ مؤقت: {type(error).__name__}"
 
-        return jsonify({"error": user_error}), 200  # بنرجع 200 عشان الفرونت إند يعرض الرسالة وموقفك ما يقفلش
+        return jsonify({"error": user_error}), 200
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", "5000")))
