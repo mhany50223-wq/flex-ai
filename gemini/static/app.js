@@ -6,11 +6,14 @@ const newChatButton = document.getElementById("new-chat");
 let conversation = [];
 
 function cleanAssistantText(text) {
-	return text
-		.replace(/\*\*([^*]+)\*\*/g, "$1")
-		.replace(/__([^_]+)__/g, "$1")
-		.replace(/^#{1,6}\s+/gm, "")
-		.trim();
+    // سطر الحماية الجديد: لو النص مش موجود أو مش نص، رجعه زي ما هو فوراً
+    if (!text || typeof text !== 'string') return text || "";
+
+    return text
+        .replace(/\*\*([^*]+)\*\*/g, "$1")
+        .replace(/__([^_]+)__/g, "$1")
+        .replace(/^#{1,6}\s+/gm, "")
+        .trim();
 }
 
 function addMessage(text, role, temporary = false) {
