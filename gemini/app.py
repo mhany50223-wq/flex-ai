@@ -47,7 +47,7 @@ def get_ai_response(message, conversation):
     models = [primary_model]
 
     # موديلات بديلة مستقرة ومضمونة
-    fallback_env = os.getenv("GEMINI_FALLBACK_MODELS", "gemini-1.5-flash")
+    fallback_env = os.getenv("GEMINI_FALLBACK_MODELS", "gemini-3.8-flash")
     for model in fallback_env.split(","):
         model = model.strip()
         if model and model not in models:
@@ -59,11 +59,11 @@ def get_ai_response(message, conversation):
     for model in models:
         for api_key in keys:
             # تجربة مرتين لكل مفتاح مع الانتظار
-            for attempt in range(2):
+            for attempt in range(1):
                 try:
                     client = genai.Client(
                         api_key=api_key,
-                        http_options=types.HttpOptions(timeout=12000),
+                        http_options=types.HttpOptions(timeout=4000),
                     )
                     response = client.models.generate_content(
                         model=model,
@@ -78,7 +78,7 @@ def get_ai_response(message, conversation):
                 except Exception as error:
                     last_error = error
                     # ننتظر ثانية واحدة لو في ضغط سيرفرات
-                    time.sleep(1)
+                    time.sleep(0.2)
                     continue
 
     if last_error:
