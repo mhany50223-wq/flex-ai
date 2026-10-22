@@ -42,44 +42,34 @@ def get_ai_response(message, conversation):
             })
     contents.append({"role": "user", "parts": [{"text": message}]})
 
-    # الموديل الرئيسي
-    primary_model = os.getenv("GEMINI_MODEL", "gemini-3.8-flash").strip()
-    models = [primary_model]
-
-    # موديلات بديلة مستقرة ومضمونة
-    fallback_env = os.getenv("GEMINI_FALLBACK_MODELS", "gemini-3.8-flash")
-    for model in fallback_env.split(","):
-        model = model.strip()
-        if model and model not in models:
-            models.append(model)
+    # الالتزام التام بموديل 3.8-flash حصراً زي ما جوجل طالبة
+    model = os.getenv("GEMINI_MODEL", "gemini-3.8-flash").strip()
+    if not model:
+        model = "gemini-3.8-flash"
 
     last_error = None
 
-    # حلقة التكرار الشاملة للموديلات والمفاتيح
-    for model in models:
-        for api_key in keys:
-            # تجربة مرتين لكل مفتاح مع الانتظار
-            for attempt in range(1):
-                try:
-                    client = genai.Client(
-                        api_key=api_key,
-                        http_options=types.HttpOptions(timeout=10000),
-                    )
-                    response = client.models.generate_content(
-                        model=model,
-                        contents=contents,
-                        config=types.GenerateContentConfig(
-                            system_instruction=SYSTEM_PROMPT,
-                            temperature=0.7,
-                        ),
-                    )
-                    if response and response.text:
-                        return response.text
-                except Exception as error:
-                    last_error = error
-                    # ننتظر ثانية واحدة لو في ضغط سيرفرات
-                    time.sleep(0.2)
-                    continue
+    # الدوران على مفاتيح الـ API الأربعة لتجاوز أي ضغط مؤقت (503)
+    for api_key in keys:
+        try:
+            client = genai.Client(
+                api_key=api_key,
+                http_options=types.HttpOptions(timeout=10000),
+            )
+            response = client.models.generate_content(
+                model=model,
+                contents=contents,
+                config=types.GenerateContentConfig(
+                    system_instruction=SYSTEM_PROMPT,
+                    temperature=0.7,
+                ),
+            )
+            if response and response.text:
+                return response.text
+        except Exception as error:
+            last_error = error
+            # لو المفتاح ده جاب ضغط 503، بينقل للمفتاح اللي بعده فوراً
+            continue
 
     if last_error:
         raise last_error
