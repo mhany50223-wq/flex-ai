@@ -1,5 +1,4 @@
 import os
-import time
 
 from flask import Flask, jsonify, render_template, request
 
@@ -36,7 +35,7 @@ def get_ai_response(message, conversation):
             })
     contents.append({"role": "user", "parts": [{"text": message}]})
 
-    primary_model = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+    primary_model = os.getenv("GEMINI_MODEL", "gemini-3.8-flash-lite")
     models = [primary_model]
     for model in os.getenv("GEMINI_FALLBACK_MODELS", "gemini-3.8-flash-lite").split(","):
         model = model.strip()
@@ -46,9 +45,12 @@ def get_ai_response(message, conversation):
     last_error = None
     for model in models:
         for api_key in keys:
-            for attempt in range(2):
+            for attempt in range(1):
                 try:
-                    client = genai.Client(api_key=api_key)
+                    client = genai.Client(
+                        api_key=api_key,
+                        http_options=types.HttpOptions(timeout=12000),
+                    )
                     response = client.models.generate_content(
                         model=model,
                         contents=contents,
@@ -64,7 +66,7 @@ def get_ai_response(message, conversation):
                     temporary = any(code in error_text for code in ("429", "503", "UNAVAILABLE", "RESOURCE_EXHAUSTED"))
                     if not temporary:
                         break
-                    time.sleep(1.5 * (attempt + 1))
+                    continue
 
     raise last_error
 
