@@ -133,9 +133,36 @@ def get_ai_response(message, conversation):
                 break
 
 
-    if last_error:
-        raise last_error
-    return "عذراً، لم نتمكن من الحصول على رد حالياً. يرجى المحاولة لاحقاً."
+   
+if last_error:
+    error_text = str(last_error).upper()
+
+    fallback_errors = (
+        "429",
+        "RESOURCE_EXHAUSTED",
+        "QUOTA",
+        "503",
+        "UNAVAILABLE",
+        "504",
+        "DEADLINE_EXCEEDED",
+    )
+
+    if any(code in error_text for code in fallback_errors):
+        try:
+            fallback_answer = get_groq_response(
+                message, conversation
+            )
+
+            if fallback_answer:
+                return fallback_answer
+
+        except Exception:
+            app.logger.exception("Groq fallback failed")
+
+    raise last_error
+
+return "عذراً، لم نتمكن من الحصول على رد حالياً."
+
 
 
 @app.get("/")
