@@ -35,9 +35,9 @@ def get_ai_response(message, conversation):
             })
     contents.append({"role": "user", "parts": [{"text": message}]})
 
-    primary_model = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+    primary_model = os.getenv("GEMINI_MODEL", "gemini-3.8-flash-lite")
     models = [primary_model]
-    for model in os.getenv("GEMINI_FALLBACK_MODELS", "gemini-3.8-flash").split(","):
+    for model in os.getenv("GEMINI_FALLBACK_MODELS", "gemini-3.8-flash-lite").split(","):
         model = model.strip()
         if model and model not in models:
             models.append(model)
