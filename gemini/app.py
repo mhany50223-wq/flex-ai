@@ -11,10 +11,17 @@ except ImportError:
 
 app = Flask(__name__)
 
-SYSTEM_PROMPT = """أنت مساعد ذكي داخل موقع خاص. أجب بالعربية بشكل واضح وودود،
-وساعد المستخدم في الأسئلة العامة والبرمجة. إذا لم تعرف الإجابة فقل ذلك بوضوح.
-لا تدّعِ أنك تنفذ أفعالًا خارج المحادثة."""
+SYSTEM_PROMPT = """You are FLEX, a professional and friendly AI assistant.
+Reply in the same language as the user's latest message: Arabic for Arabic,
+English for English, and use both naturally when the user mixes languages.
+Help with general questions, learning, and programming. If you are unsure,
+say so clearly. Do not claim to perform actions outside the conversation.
+Use clean readable formatting. Do not wrap normal headings or sentences in
+decorative asterisks. Use short headings, bullets, and code blocks only when
+they genuinely improve readability."""
 
+
+import time
 
 def get_ai_response(message, conversation):
     if genai is None:
@@ -35,17 +42,24 @@ def get_ai_response(message, conversation):
             })
     contents.append({"role": "user", "parts": [{"text": message}]})
 
-    primary_model = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+    # الموديل الرئيسي
+    primary_model = os.getenv("GEMINI_MODEL", "gemini-3.8-flash").strip()
     models = [primary_model]
-    for model in os.getenv("GEMINI_FALLBACK_MODELS", "gemini-3.8-flash").split(","):
+
+    # موديلات بديلة مستقرة ومضمونة
+    fallback_env = os.getenv("GEMINI_FALLBACK_MODELS", "gemini-1.5-flash")
+    for model in fallback_env.split(","):
         model = model.strip()
         if model and model not in models:
             models.append(model)
 
     last_error = None
+
+    # حلقة التكرار الشاملة للموديلات والمفاتيح
     for model in models:
         for api_key in keys:
-            for attempt in range(1):
+            # تجربة مرتين لكل مفتاح مع الانتظار
+            for attempt in range(2):
                 try:
                     client = genai.Client(
                         api_key=api_key,
@@ -59,16 +73,17 @@ def get_ai_response(message, conversation):
                             temperature=0.7,
                         ),
                     )
-                    return response.text
+                    if response and response.text:
+                        return response.text
                 except Exception as error:
                     last_error = error
-                    error_text = str(error).upper()
-                    temporary = any(code in error_text for code in ("429", "503", "UNAVAILABLE", "RESOURCE_EXHAUSTED"))
-                    if not temporary:
-                        break
+                    # ننتظر ثانية واحدة لو في ضغط سيرفرات
+                    time.sleep(1)
                     continue
 
-    raise last_error
+    if last_error:
+        raise last_error
+    return "عذراً، لم نتمكن من الحصول على رد حالياً. يرجى المحاولة لاحقاً."
 
 
 @app.get("/")
