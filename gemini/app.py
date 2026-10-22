@@ -49,27 +49,47 @@ def get_ai_response(message, conversation):
 
     last_error = None
 
-    # الدوران على مفاتيح الـ API الأربعة لتجاوز أي ضغط مؤقت (503)
     for api_key in keys:
-        try:
-            client = genai.Client(
-                api_key=api_key,
-                http_options=types.HttpOptions(timeout=10000),
-            )
-            response = client.models.generate_content(
-                model=model,
-                contents=contents,
-                config=types.GenerateContentConfig(
-                    system_instruction=SYSTEM_PROMPT,
-                    temperature=0.7,
-                ),
-            )
-            if response and response.text:
-                return response.text
-        except Exception as error:
-            last_error = error
-            # لو المفتاح ده جاب ضغط 503، بينقل للمفتاح اللي بعده فوراً
-            continue
+        client = genai.Client(
+            api_key=api_key,
+            http_options=types.HttpOptions(timeout=120000),
+        )
+
+        for attempt in range(2):
+            try:
+                response = client.models.generate_content(
+                    model=model,
+                    contents=contents,
+                    config=types.GenerateContentConfig(
+                        system_instruction=SYSTEM_PROMPT,
+                        temperature=0.7,
+                    ),
+                )
+
+                if response and response.text:
+                    return response.text
+
+                break
+
+            except Exception as error:
+                last_error = error
+                error_text = str(error).upper()
+
+                retryable = any(code in error_text for code in (
+                    "504",
+                    "DEADLINE_EXCEEDED",
+                    "503",
+                    "UNAVAILABLE",
+                    "502",
+                    "BAD_GATEWAY",
+                ))
+
+                if retryable and attempt == 0:
+                    time.sleep(2)
+                    continue
+
+                break
+
 
     if last_error:
         raise last_error
