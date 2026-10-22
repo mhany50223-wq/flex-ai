@@ -32,7 +32,7 @@ def get_ai_response(message, conversation):
     contents.append({"role": "user", "parts": [{"text": message}]})
 
     response = client.models.generate_content(
-        model=os.getenv("GEMINI_MODEL", "gemini-2.0-flash"),
+        model=os.getenv("GEMINI_MODEL", "gemini-3.8-flash"),
         contents=contents,
         config=types.GenerateContentConfig(
             system_instruction=SYSTEM_PROMPT,
