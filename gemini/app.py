@@ -188,14 +188,17 @@ def chat():
         return jsonify({"answer": answer})
     except Exception as error:
         app.logger.exception("AI request failed: %s", error)
-        details = str(error)
-        for api_key in os.getenv("GEMINI_API_KEYS", "").split(",") + [os.getenv("GEMINI_API_KEY", "")]:
-            if api_key:
-                details = details.replace(api_key, "[hidden]")
-        return jsonify({
-            "error": f"حدث خطأ من Gemini: {type(error).__name__}: {details[:500]}"
-        }), 502
+        error_msg = str(error)
+        
+        # لو المشكلة كوتا أو ضغط، نوضحها للمستخدم بشياكة بدل ما السيرفر يوقع
+        if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
+            user_error = "عذراً يا فلكس، مفتاح الapi استنفذ الحد الأقصى اليومي (Quota). جرب مفتاح جديد أو انتظر قليلاً."
+        elif "503" in error_msg or "UNAVAILABLE" in error_msg:
+            user_error = "سيرفرات جوجل عليها ضغط حالياً (503)، جرب ابعت الرسالة تاني كمان ثانية."
+        else:
+            user_error = f"حدث خطأ مؤقت: {type(error).__name__}"
 
+        return jsonify({"error": user_error}), 200  # بنرجع 200 عشان الفرونت إند يعرض الرسالة وموقفك ما يقفلش
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", "5000")))
