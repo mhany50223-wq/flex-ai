@@ -63,7 +63,7 @@ def get_ai_response(message, conversation):
                 try:
                     client = genai.Client(
                         api_key=api_key,
-                        http_options=types.HttpOptions(timeout=4000),
+                        http_options=types.HttpOptions(timeout=10000),
                     )
                     response = client.models.generate_content(
                         model=model,
