@@ -63,9 +63,12 @@ def chat():
     try:
         answer = get_ai_response(message, conversation)
         return jsonify({"answer": answer})
-    except Exception:
-        app.logger.exception("AI request failed")
-        return jsonify({"error": "حدث خطأ أثناء الاتصال بالمساعد. راجع إعدادات API key."}), 502
+    except Exception as error:
+        app.logger.exception("AI request failed: %s", error)
+        details = str(error).replace(os.getenv("GEMINI_API_KEY", ""), "[hidden]")
+        return jsonify({
+            "error": f"حدث خطأ من Gemini: {type(error).__name__}: {details[:500]}"
+        }), 502
 
 
 if __name__ == "__main__":
